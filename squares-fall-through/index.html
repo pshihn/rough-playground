@@ -1,0 +1,139 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+  <title>Fall through</title>
+  <meta name="description" content="Random squares generative art using rough.js">
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
+    footer {
+      padding: 20px;
+      text-align: center;
+      margin-top: 50px;
+      font-family: monospace;
+      font-size: 14px;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    a,
+    a:visited,
+    a:hover {
+      color: inherit;
+      text-decoration: none;
+      box-shadow: 0 2px #B71C1C;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas></canvas>
+  <footer>
+    <a href="https://github.com/pshihn/rough-playground/tree/master/squares">View source</a>. Made with <a href="https://roughjs.com/">Rough.js</a>
+  </footer>
+  <script src="https://unpkg.com/roughjs@2.2.5/dist/rough.min.js"></script>
+  <script>
+    const size = 100;
+    const gap = 10;
+    const cellSize = size + gap * 2;
+    const incr = 2;
+    const canvas = document.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    const rc = rough.canvas(canvas);
+    let rowCols = [0, 0];
+    let cellShapes = [];
+    let cellPath = [];
+    let currentRow = 0;
+    let currentPos = 0;
+    const diameter = gap * 2;
+    const radius = diameter / 2;
+    let ticking = false;
+
+    const ballStyle = {
+      fill: 'blue',
+      fillStyle: 'hachure',
+      fillWeight: 3,
+      roughness: 2
+    };
+
+    function redraw() {
+      const cols = Math.min(6, Math.floor(window.innerWidth / cellSize));
+      const rows = Math.max(6, Math.floor(window.innerHeight / cellSize));
+      canvas.width = cols * cellSize;
+      canvas.height = rows * cellSize;
+      rowCols = [rows, cols];
+      cellShapes = [];
+      assignCells();
+      currentPos = -radius;
+      if (!ticking) {
+        ticking = true;
+        tick();
+      }
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawCells();
+      if (currentPos >= (size + radius)) {
+        currentPos = -radius;
+        currentRow++;
+        if (currentRow >= rowCols[0]) {
+          currentRow = 0;
+          assignCells();
+        }
+      }
+      const y = currentRow * cellSize + gap + currentPos;
+      const x = cellPath[currentRow] * cellSize + gap + (size / 2);
+      rc.circle(x, y, diameter, ballStyle);
+      currentPos += 2;
+      clearOverflow();
+      requestAnimationFrame(() => tick());
+    }
+
+    function assignCells() {
+      cellPath = [];
+      for (let r = 0; r < rowCols[0]; r++) {
+        cellPath.push(Math.min(rowCols[1] - 1, Math.floor(Math.random() * rowCols[1])));
+      }
+    }
+
+    function drawCells() {
+      const rows = rowCols[0], cols = rowCols[1];
+      if (cellShapes.length) {
+        cellShapes.forEach((d) => {
+          rc.draw(d);
+        });
+      } else {
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const s = rc.rectangle(c * cellSize + gap, r * cellSize + gap, size, size, {
+              fill: '#FCE4EC',
+              fillStyle: 'solid'
+            });
+            cellShapes.push(s);
+          }
+        }
+      }
+    }
+
+    function clearOverflow() {
+      const rows = rowCols[0];
+      for (let r = 0; r < rows + 1; r++) {
+        ctx.clearRect(0, r * cellSize - gap + 2, canvas.width, gap * 2 - 4);
+      }
+    }
+
+    window.addEventListener('resize', redraw);
+    redraw();
+  </script>
+</body>
+
+</html>
